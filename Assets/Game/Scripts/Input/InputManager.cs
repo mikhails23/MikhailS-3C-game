@@ -10,6 +10,7 @@ public class InputManager : MonoBehaviour
     public Action OnJumpInput;
     public Action OnClimbInput;
     public Action OnCancelClimb;
+    public Action OnChangePOV;
 
     private void Update()
     {
@@ -31,10 +32,7 @@ public class InputManager : MonoBehaviour
         float verticalAxis = Input.GetAxis("Vertical");
         float horizontalAxis = Input.GetAxis("Horizontal");
         Vector2 inputAxis = new Vector2(horizontalAxis, verticalAxis);
-        if (OnMoveInput != null) 
-        {
-            OnMoveInput(inputAxis);
-        }
+        OnMoveInput?.Invoke(inputAxis);
     }
 
     private void CheckJumpInput()
@@ -49,16 +47,8 @@ public class InputManager : MonoBehaviour
     private void CheckSprintInput()
     {
         bool isHoldSprintInput = Input.GetKey(KeyCode.LeftShift) ||
-        Input.GetKey(KeyCode.RightShift);
+                                    Input.GetKey(KeyCode.RightShift);
 
-        // if (isHoldSprintInput)
-        // {
-        //     OnSprintInput(true);
-        // }
-        // else
-        // {
-        //     OnSprintInput(false);
-        // }
         OnSprintInput(isHoldSprintInput);
 
     }
@@ -78,7 +68,7 @@ public class InputManager : MonoBehaviour
         bool isPressChangePOVInput = Input.GetKeyDown(KeyCode.Q);
         if (isPressChangePOVInput)
         {
-            Debug.Log("Change POV");
+            OnChangePOV();
         }
     }
 
