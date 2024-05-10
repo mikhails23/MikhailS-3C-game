@@ -81,6 +81,9 @@ public class PlayerMovement : MonoBehaviour
     private float _hitDetectorRadius;
     [SerializeField]
     private LayerMask _hitLayer;
+    
+    [SerializeField]
+    private DestroyableManager _destroyableManager;
 
     private Rigidbody _rigidbody;
     private float _rotationSmoothVelocity;
@@ -451,12 +454,19 @@ public class PlayerMovement : MonoBehaviour
     private void Hit()
     {
         Collider[] hitObjects = Physics.OverlapSphere(_hitDetector.position, _hitDetectorRadius, _hitLayer);
+        bool isDestroyedAnyObject = false;
         for (int i = 0; i < hitObjects.Length; i++)
         {
             if (hitObjects[i].gameObject != null)
             {
                 Destroy(hitObjects[i].gameObject);
+                isDestroyedAnyObject = true;
             }
+        }
+
+        if (isDestroyedAnyObject) 
+        {
+            _destroyableManager.RespawnDestroyable();
         }
     }
 
