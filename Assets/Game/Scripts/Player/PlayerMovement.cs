@@ -11,6 +11,10 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float _crouchSpeed;
     [SerializeField]
+    private float _crouchRunSpeed;
+    [SerializeField]
+    private float _crouchRunTransition;
+    [SerializeField]
     private float _jumpForce;
     [SerializeField]
     private float _walkSpeedTransition;
@@ -217,29 +221,34 @@ public class PlayerMovement : MonoBehaviour
 
     private void Sprint(bool isSprint)
     {
-        if (_playerStance != PlayerStance.Crouch)
+        if (isSprint)
         {
-            if (isSprint)
+            if (_playerStance == PlayerStance.Climb && _speed < _climbSprintSpeed)
             {
-                if (_playerStance == PlayerStance.Climb && _speed < _climbSprintSpeed)
-                {
-                    _speed += _climbSpeedTransition * Time.deltaTime;
-                } else
-                if (_playerStance != PlayerStance.Climb && _speed < _sprintSpeed)
-                {
-                    _speed += _walkSpeedTransition * Time.deltaTime;
-                }
-                
+                _speed += _climbSpeedTransition * Time.deltaTime;
             } else
+            if (_playerStance == PlayerStance.Crouch && _speed < _crouchRunSpeed)
             {
-                if (_playerStance == PlayerStance.Climb && _speed > _climbSpeed)
-                {
-                    _speed -= _climbSpeedTransition * Time.deltaTime;
-                } else
-                if (_playerStance != PlayerStance.Climb && _speed > _walkSpeed)
-                {
-                    _speed -= _walkSpeedTransition * Time.deltaTime;
-                }
+                _speed += _crouchRunTransition * Time.deltaTime;
+            } else
+            if (_playerStance == PlayerStance.Stand && _speed < _sprintSpeed)
+            {
+                _speed += _walkSpeedTransition * Time.deltaTime;
+            }
+            
+        } else
+        {
+            if (_playerStance == PlayerStance.Climb && _speed > _climbSpeed)
+            {
+                _speed -= _climbSpeedTransition * Time.deltaTime;
+            } else
+            if (_playerStance == PlayerStance.Crouch && _speed > _crouchSpeed)
+            {
+                _speed -= _crouchRunTransition * Time.deltaTime;
+            } else
+            if (_playerStance == PlayerStance.Stand && _speed > _walkSpeed)
+            {
+                _speed -= _walkSpeedTransition * Time.deltaTime;
             }
         }
     }
