@@ -41,6 +41,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField]
     private Transform _climbDetector;
     [SerializeField]
+    private Transform _upClimbDetector;
+    [SerializeField]
     private Transform _leftClimbDetector;
     [SerializeField]
     private Transform _rightClimbDetector;
@@ -88,6 +90,9 @@ public class PlayerMovement : MonoBehaviour
     
     [SerializeField]
     private DestroyableManager _destroyableManager;
+
+    [SerializeField]
+    private PlayerAudioManager _playerAudioManager;
 
     private Rigidbody _rigidbody;
     private float _rotationSmoothVelocity;
@@ -198,14 +203,37 @@ public class PlayerMovement : MonoBehaviour
             
         } else if (isPlayerClimbing)
         {
-            Vector3 horizontal = axisDirection.x * transform.right;
-            Vector3 vertical = axisDirection.y * transform.up;
+            Vector3 horizontal = Vector3.zero;
+            Vector3 vertical = Vector3.zero;
+
+            bool canClimbUp = Physics.Raycast(_upClimbDetector.position,
+                                                    transform.forward,
+                                                    _climbCheckDistance,
+                                                    _climbableLayer);
+            bool canClimbLeft = Physics.Raycast(_leftClimbDetector.position,
+                                                    transform.forward,
+                                                    _climbCheckDistance,
+                                                    _climbableLayer);
+            bool canClimbRight = Physics.Raycast(_rightClimbDetector.position,
+                                                    transform.forward,
+                                                    _climbCheckDistance,
+                                                    _climbableLayer);
+
+            if ((canClimbLeft && (axisDirection.x < 0)) || (canClimbRight && (axisDirection.x > 0)))
+            {
+                horizontal = axisDirection.x * transform.right;
+            }
+
+            if (canClimbUp && (axisDirection.y > 0) || (axisDirection.y < 0))
+            {
+                vertical = axisDirection.y * transform.up;
+            }
+
             movementDirection = horizontal + vertical;
             _rigidbody.AddForce(movementDirection * _speed * Time.deltaTime);
 
-            Vector3 velocity = new Vector3(_rigidbody.velocity.x, _rigidbody.velocity.y, 0);
-            _animator.SetFloat("ClimbVelocityX", velocity.magnitude * axisDirection.x);
-            _animator.SetFloat("ClimbVelocityY", velocity.magnitude * axisDirection.y);
+            _animator.SetFloat("ClimbVelocityX", _rigidbody.velocity.magnitude * axisDirection.x);
+            _animator.SetFloat("ClimbVelocityY", _rigidbody.velocity.magnitude * axisDirection.y);
         } else if (isPlayerGliding)
         {
             Vector3 rotationDegree = transform.rotation.eulerAngles;
@@ -255,7 +283,8 @@ public class PlayerMovement : MonoBehaviour
 
     private void Jump()
     {
-        if (_isGrounded) 
+        bool canJump = _animator.GetCurrentAnimatorStateInfo(0).IsTag("CanJump");
+        if (_isGrounded && !_isPunching && canJump) 
         {
             Vector3 jumpDirection = Vector3.up;
             _rigidbody.AddForce(jumpDirection * _jumpForce, ForceMode.Impulse);
@@ -285,30 +314,9 @@ public class PlayerMovement : MonoBehaviour
 
         if (isHitLowerStep && !isHitUpperStep)
         {
+            // Debug.Log("Going Up");
             _rigidbody.AddForce(0f, _stepForce * Time.deltaTime, 0f);
         }
-    }
-
-    private bool CheckClimbableArea()
-    {
-        bool topDetector = Physics.Raycast(_climbDetector.position,
-                                                    transform.forward,
-                                                    _climbCheckDistance,
-                                                    _climbableLayer);
-        bool leftDetector = Physics.Raycast(_leftClimbDetector.position,
-                                                    transform.forward,
-                                                    _climbCheckDistance,
-                                                    _climbableLayer);
-        bool rightDetector = Physics.Raycast(_rightClimbDetector.position,
-                                                    transform.forward,
-                                                    _climbCheckDistance,
-                                                    _climbableLayer);
-
-        Debug.Log("topDetector: " + topDetector);
-        Debug.Log("leftDetector: " + leftDetector);
-        Debug.Log("rightDetector: " + rightDetector);
-
-        return topDetector && leftDetector && rightDetector;
     }
 
     private void StartClimb()
@@ -412,6 +420,7 @@ public class PlayerMovement : MonoBehaviour
             _playerStance = PlayerStance.Glide;
             _animator.SetBool("IsGliding", true);
             _cameraManager.SetFPSClampedCamera(true, transform.rotation.eulerAngles);
+            _playerAudioManager.PlayGlideSFX();
         }
     }
 
@@ -422,6 +431,7 @@ public class PlayerMovement : MonoBehaviour
             _playerStance = PlayerStance.Stand;
             _animator.SetBool("IsGliding", false);
             _cameraManager.SetFPSClampedCamera(false, transform.rotation.eulerAngles);
+            _playerAudioManager.StopGlideSFX();
         }
     }
 
@@ -488,6 +498,36 @@ public class PlayerMovement : MonoBehaviour
             Gizmos.color = Color.green;
         }
         Gizmos.DrawLine(_aboveDetector.position, _aboveDetector.position + _aboveDetector.up);
+
+        bool isHitLowerStep = Physics.Raycast(_groundDetector.position, 
+                                                transform.forward, 
+                                                _stepCheckerDistance);
+        if (isHitLowerStep) {
+            Gizmos.color = Color.green;
+        } else {
+            Gizmos.color = Color.red;
+        }
+        Gizmos.DrawLine(_groundDetector.position, _groundDetector.position + transform.forward);
+
+        Vector3 upperStepDetector = _groundDetector.position + _upperStepOffset;
+        bool isHitUpperStep = Physics.Raycast(upperStepDetector, 
+                                                transform.forward, 
+                                                _stepCheckerDistance);
+        if (isHitUpperStep) {
+            Gizmos.color = Color.red;
+        } else {
+            Gizmos.color = Color.green;
+        }
+        
+        Gizmos.DrawLine(upperStepDetector, upperStepDetector + transform.forward);
+
+        // bool isGrounded = Physics.CheckSphere(_groundDetector.position, _detectorRadius, _groundLayer);
+        // if (isGrounded) {
+        //     Gizmos.color = Color.red;
+        // } else {
+        //     Gizmos.color = Color.green;
+        // }
+        // Gizmos.DrawSphere(_groundDetector.position, _detectorRadius);
     }
 
 }

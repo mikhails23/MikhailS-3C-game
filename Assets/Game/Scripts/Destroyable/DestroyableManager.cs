@@ -9,6 +9,12 @@ public class DestroyableManager : MonoBehaviour
     private float _respawnInterval;
 
     private Coroutine _respawnObject;
+    private AudioSource _fallSFX;
+
+    private void Start()
+    {
+        _fallSFX = GetComponent<AudioSource>();
+    }
 
     public void RespawnDestroyable()
     {
@@ -23,8 +29,9 @@ public class DestroyableManager : MonoBehaviour
     {
         yield return new WaitForSeconds(_respawnInterval);
         Instantiate(_destroyableObject, 
-                    new Vector3(_destroyableObject.transform.position.x, 3f, _destroyableObject.transform.position.z), 
+                    new Vector3(_destroyableObject.transform.position.x + 3, 3f, _destroyableObject.transform.position.z), 
                     _destroyableObject.transform.rotation);
+        _fallSFX.Play();
     }
 
 }
